@@ -1,0 +1,29 @@
+---
+- hosts: "{{ passed_in_hosts }}"
+  become: yes
+  remote_user: ec2-user
+  become_user: root
+  tasks:
+    - name: Updating yum packages
+      yum: name=* state=latest
+    - name: install dependencies
+      yum:
+        name: "{{ package }}"
+        state: present
+      vars:
+        package:
+        - httpd
+        - php
+        - mysql-server
+    - name: Ensure apache starts
+      service: name=httpd state=started enabled=yes
+    - name: Configure httpd.conf file
+        lineinfile:
+          path: /etc/httpd/conf/httpd.conf
+          regexp: ^Listen
+          line: 'Listen 8080'
+        notify: restart apache
+
+  handlers:
+    - name: restart apache
+      service: name=httpd state=restarted
